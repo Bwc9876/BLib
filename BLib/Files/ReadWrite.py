@@ -19,11 +19,20 @@ def GetLinesAsList(file, include_newlines=False):
                     lines += [line.strip()]
                 else:
                     lines += [line]
+            f.close()
             return lines
         else:
             raise FileNotFoundError(f"'{file}' is a directory")
     else:
         raise FileNotFoundError(f"file '{file}' doesn't exist")
+
+def Touch(file):
+    if os.path.exists(file):
+        raise FileExistsError(f"The file {file} already exists!")
+    else:
+        f = open(file, 'w+')
+        f.write('')
+        f.close()
 
 def Zip(name):
     with ZipFile(f'{name}.zip', 'w') as zipObj:

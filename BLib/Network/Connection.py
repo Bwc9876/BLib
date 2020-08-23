@@ -2,6 +2,8 @@ import socket
 import os
 from BLib.Strings.Convert import sanitize, ListToString
 from BLib.Files.ReadWrite import GetLinesAsList
+from BLib.Network.Formatting import RemoveNullTerminator
+
 
 
 class Connection:
@@ -16,25 +18,38 @@ class Connection:
     def Send(self, message):
         self.s.send(bytes(message, 'UTF-8'))
 
+    def RecieveNoSanitize(self):
+        return self.s.recv(self.buffer)
+
     def Recieve(self):
         return sanitize(self.s.recv(self.buffer))
 
-    def WaitUntilRecv(self, message=None):
+    def WaitUntilRecv(self, message=None, format_incoming=None, log=False):
+        specific_message = message is not None
         while True:
-            d = self.s.recv(self.buffer)
+            d = self.RecieveNoSanitize()
+            if log:
+                print(f'Expected: {message}')
             if not d == '':
-                if message is not None and sanitize(d) == message:
+                d = sanitize(d)
+                if format_incoming is not None:
+                    d = format_incoming(d)
+                if log:
+                    print(f'Got: {d}')
+                if specific_message and d == message:
                     break
-                elif message is None:
+                elif not specific_message:
                     break
                 else:
                     continue
-        return sanitize(d)
+        return d
 
     def Close(self):
         self.s.close()
+        del self
 
-    #contcode: what to send to the other end to coninue recieving data
+
+    #contcode: what to send to the other end to continue recieving data
     #stopcode: the string that represents the end of the datastream
     def RecvList(self, contcode, stopcode):
         
@@ -69,11 +84,14 @@ class Connection:
         
         f.close()
         
-    def SendList(self, contcode, endcode, lst):
-        
+    def SendList(self, contcode, endcode, lst, from_cpp=False):
+        if from_cpp:
+            func = RemoveNullTerminator
+        else:
+            func = None
         for i in lst:
             self.Send(i)
-            self.WaitUntilRecv(message=contcode)
+            self.WaitUntilRecv(message=contcode, format_incoming=func)
             
         self.Send(endcode)
 
