@@ -37,7 +37,7 @@ def save_object_to_file(obj, filename=None, replace=False):
     return os.path.abspath(f"{filename}.json")
 
 
-def get_obj_from_file(cl, filename):
+def get_obj_from_file(obj, filename):
     if not os.path.exists(f"{filename}.json"):
         raise FileNotFoundError(f"file '{filename}.json' not found")
 
@@ -45,6 +45,6 @@ def get_obj_from_file(cl, filename):
 
     json_str = f.read()
 
-    new_obj = json_to_obj(cl, json_str)
+    new_obj = json_to_obj(obj, json_str)
 
     return new_obj
