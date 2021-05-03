@@ -1,9 +1,9 @@
-import socket
 import os
-from BLib.Strings.Convert import sanitize, ListToString
-from BLib.Files.ReadWrite import GetLinesAsList
-from BLib.Network.Formatting import RemoveNullTerminator
+import socket
 
+from BLib.Files.ReadWrite import get_lines_as_list
+from BLib.Network.Formatting import remove_null_terminator
+from BLib.Strings.Convert import sanitize, ListToString
 
 
 class Connection:
@@ -15,19 +15,19 @@ class Connection:
 
         self.s.connect((ip, port))
 
-    def Send(self, message):
+    def send(self, message):
         self.s.send(bytes(message, 'UTF-8'))
 
-    def RecieveNoSanitize(self):
+    def receive_no_sanitize(self):
         return self.s.recv(self.buffer)
 
-    def Recieve(self):
+    def receive(self):
         return sanitize(self.s.recv(self.buffer))
 
-    def WaitUntilRecv(self, message=None, format_incoming=None, log=False):
+    def wait_until_recv(self, message=None, format_incoming=None, log=False):
         specific_message = message is not None
         while True:
-            d = self.RecieveNoSanitize()
+            d = self.receive_no_sanitize()
             if log:
                 print(f'Expected: {message}')
             if not d == '':
@@ -44,64 +44,61 @@ class Connection:
                     continue
         return d
 
-    def Close(self):
+    def close(self):
         self.s.close()
         del self
 
+    def recv_list(self, contcode, stopcode):
 
-    #contcode: what to send to the other end to continue recieving data
-    #stopcode: the string that represents the end of the datastream
-    def RecvList(self, contcode, stopcode):
-        
         stuff = []
-        
+
         done = False
 
         while not done:
             data = self.s.recv(self.buffer)
-            self.Send(contcode)
+            self.send(contcode)
             if sanitize(data) == stopcode:
                 done = True
                 break
             elif not data == b'':
                 stuff += [sanitize(data)]
-                
+
         return stuff
-    
-    def RecvFile(self, filename, contcode, endcode, replace=False):
+
+    def recv_file(self, filename, contcode, endcode, replace=False):
         if os.path.exists(filename) and replace:
             os.remove(filename)
         elif os.path.exists(filename) and not replace:
             raise FileExistsError(f"'{filename}' already exists!")
-        
-        s = self.RecvList(contcode, endcode)
-        
+
+        s = self.recv_list(contcode, endcode)
+
         f = open(filename, 'w+')
-        
+
         d = ListToString(s, '\n')
-        
+
         f.write(d)
-        
+
         f.close()
-        
-    def SendList(self, contcode, endcode, lst, from_cpp=False):
+
+    def send_list(self, contcode, endcode, lst, from_cpp=False):
         if from_cpp:
-            func = RemoveNullTerminator
+            func = remove_null_terminator
         else:
             func = None
         for i in lst:
-            self.Send(i)
-            self.WaitUntilRecv(message=contcode, format_incoming=func)
-            
-        self.Send(endcode)
+            self.send(i)
+            self.wait_until_recv(message=contcode, format_incoming=func)
 
-    def SendFile(self, contcode, endcode, filename):
+        self.send(endcode)
+
+    def send_file(self, contcode, endcode, filename):
 
         if not os.path.exists(filename):
             raise FileNotFoundError(f"'{filename}' not found")
         if not os.path.isfile(filename):
             raise FileNotFoundError(f"'{filename}' is a directory")
 
-        to_send = GetLinesAsList(filename, include_newlines=False)
+        to_send = get_lines_as_list(filename, include_newlines=False)
 
-        self.SendList(contcode, endcode, to_send)
+        self.send_list(contcode, endcode, to_send)

@@ -1,6 +1,7 @@
 import re
 from datetime import datetime
 
+
 def GetContained(str, cont, endcont=None):
     if endcont is None:
         endcont = cont
@@ -10,6 +11,7 @@ def GetContained(str, cont, endcont=None):
     sub = re.search(pattern, str).goup(1)
 
     return sub
+
 
 def GetDateAsString():
     today = datetime.utcnow().date()

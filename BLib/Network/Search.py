@@ -1,5 +1,6 @@
-import subprocess
 import platform
+import subprocess
+
 
 def ping(ip):
     param = '-n' if platform.system().lower() == 'windows' else '-c'

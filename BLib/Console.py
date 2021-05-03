@@ -1,5 +1,5 @@
 
-def progbar(curr, total, full_progbar=100):
-    frac = curr/total
-    filled_progbar = round(frac*full_progbar)
-    print('\r', '#'*filled_progbar + '-'*(full_progbar-filled_progbar), '[{:>7.2%}]'.format(frac), end='')
+def progress_bar(curr, total, full_bar_value=100):
+    frac = curr / total
+    amount_filled = round(frac * full_bar_value)
+    print('\r', '#' * amount_filled + '-' * (full_bar_value - amount_filled), '[{:>7.2%}]'.format(frac), end='')
